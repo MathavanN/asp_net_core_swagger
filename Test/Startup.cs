@@ -1,20 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Test.Context;
+using Test.Swagger;
 
 namespace Test
 {
@@ -30,6 +26,11 @@ namespace Test
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<TestDataContext>(opt =>
+            {
+                opt.UseLazyLoadingProxies();
+                opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
+            });
             services.AddVersionedApiExplorer(options =>
             {
                 //The format of the version added to the route URL
@@ -37,7 +38,6 @@ namespace Test
                 //Tells swagger to replace the version in the controller route
                 options.SubstituteApiVersionInUrl = true;
             });
-            services.AddMvc();
             services.AddControllers();
             services.AddApiVersioning(options =>
             {
@@ -62,7 +62,7 @@ namespace Test
         {
             app.UseApiVersioning();
             app.UseSwagger();
-            
+
             if (env.IsDevelopment())
             {
                 //app.UseDeveloperExceptionPage();
@@ -74,10 +74,10 @@ namespace Test
 
             app.UseAuthorization();
 
-            //app.UseEndpoints(endpoints =>
-            //{
-            //    endpoints.MapControllers();
-            //});
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
 
             app.UseSwaggerUI(c =>
             {
